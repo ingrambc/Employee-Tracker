@@ -1,6 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-var consoleTbl = require("console.table");
+var cTable = require("console.table");
 
 // create the connection information for the sql database
 var connection = mysql.createConnection({
@@ -20,7 +20,7 @@ connection.connect(function(err) {
 
 //lists
 const tasks = ["View All Employees", "View All Employees by Department", "View All Employees by Manager",
-  "Add Employees", "Remove Employees", "Update Employee Role", "Update Employee Manager", "Exit"];
+  "Add Employees", "Remove Employees", "Update Employee Role", "Update Employee Manager","add Role", "add Department", "Exit"];
 
 function start(){
   inquirer.prompt({
@@ -30,7 +30,7 @@ function start(){
     choices: tasks
   }).then(function(answer){
     switch (answer.task){
-      case "View All Employees":
+      case ("View All Employees"):
         viewAllEmps();
         break;
       case ("View All Employees by Department"):
@@ -51,6 +51,12 @@ function start(){
       case ("Update Employee Manager"):
         updateMan();
         break;
+      case ("add Role"):
+        addRole();
+        break;
+      case ("add Department"):
+        addDepartment();
+        break;
       case ("Exit"):
         connection.end();
         break;
@@ -63,9 +69,21 @@ function start(){
 }
 
 function viewAllEmps(){
-  console.log("Entered viewAllEmps");
-  start();
+  // Build querry statement
+  var querry = "SELECT a.id, a.first_name, a.last_name, c.name, b.title, b.salary ";
+  querry += "FROM employeeTbl a, roleTbl b, departmentTbl c ";
+  querry += "WHERE a.role_id = b.id AND b.department_id = c.id";
+
+  // querry database, display results
+  connection.query(querry, function(err, res){
+    if(err)throw err;
+    console.log(res);
+    console.table(res);
+    start();
+  })
+  
 }
+
 function viewByDept(){
   console.log("Entered viewByDept");
   start();
@@ -93,5 +111,15 @@ function updateRole(){
 
 function updateMan(){
   console.log("Entered updateMan");
+  start();
+}
+
+function addRole(){
+  console.log("Entered addRole");
+  start();
+}
+
+function addDepartment(){
+  console.log("Entered addDepartment");
   start();
 }

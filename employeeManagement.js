@@ -100,7 +100,7 @@ function viewByDept(){
     inquirer.prompt({
       name: "department",
       type: "list",
-      message: "What department would you lke to view?",
+      message: "What department would you like to view?",
       choices: departments
     }).then(function(answer){
       //build querry statement
@@ -122,13 +122,124 @@ function viewByDept(){
 }//end of function
 
 function viewByMan(){
-  console.log("Entered viewByMan");
-  start();
+  //get manager list
+  let querry = "SELECT DISTINCT a.manager_id, concat(b.first_name, ' ', b.last_name) AS manager ";
+      querry += "FROM employeetbl a ";
+      querry += "LEFT JOIN employeetbl b ON a.manager_id = b.id ";
+      querry += "WHERE a.manager_id IS NOT NULL ";
+
+  connection.query(querry, function(err, res){
+    if(err) throw err;
+    //turn response into list
+    let managers = [];
+    for (let i = 0; i < res.length; i++) {
+      managers.push(res[i].manager);
+    }
+
+    //get department to view
+    inquirer.prompt({
+      name: "manager",
+      type: "list",
+      message: "What managers employees would you like to view?",
+      choices: managers
+    }).then(function(answer){
+      // get id of manager from answer
+      let manId = -1
+      for (let i = 0; i < managers.length; i++) {
+        if(res[i].manager === answer.manager)
+          manId = res[i].manager_id;
+      }
+
+      //build querry statement
+      let querry = "SELECT a.id, a.first_name, a.last_name, b.name, c.title, c.salary, concat(d.first_name, ' ', d.last_name) AS manager ";
+      querry += "FROM employeetbl a ";
+      querry += "LEFT JOIN roletbl c ON a.role_id = c.id ";
+      querry += "LEFT JOIN departmenttbl b ON c.department_id = b.id ";
+      querry += "LEFT JOIN employeetbl d ON a.manager_id = d.id ";
+      querry += "WHERE a.manager_id = ?";
+
+      //run querry and display result
+      connection.query(querry, [manId], function(err, res){
+        if(err) throw err;
+        console.table(res);
+        start();
+      })
+    })
+  })
 }
 
 function addEmp(){
-  console.log("Entered addEmp");
-  start();
+  //get list for prompts
+  connection.query("SELECT DISTINCT title, id FROM roleTbl", function(err, resRoles){
+    let roles = []
+    for (let i = 0; i < resRoles.length; i++) {
+      roles.push(resRoles[i].title);      
+    }
+
+    let querry = "SELECT DISTINCT a.manager_id, concat(b.first_name, ' ', b.last_name) AS manager ";
+    querry += "FROM employeetbl a ";
+    querry += "LEFT JOIN employeetbl b ON a.manager_id = b.id ";
+    querry += "WHERE a.manager_id IS NOT NULL ";
+
+    connection.query(querry, function(err, resMan){
+      if(err) throw err;
+      //turn response into list
+      let managers = ["none"];
+      for (let i = 0; i < resMan.length; i++) {
+        managers.push(resMan[i].manager);
+      }
+
+      inquirer
+      .prompt([{
+          name: "fName",
+          type: "input",
+          message: "Employees first name: ",
+        },{
+          name: "lName",
+          type: "input",
+          message: "Employees last name: ",
+        },{
+          name: "role",
+          type: "list",
+          message: "What is the employees role? ",
+          choices: roles
+        },{
+          name: "manager",
+          type: "list",
+          message: "Who is the employees manager? ",
+          choices: managers
+      }]).then (function(answer){
+        //get ID values
+        let manId = 1;
+        // for (let i = 0; i < managers.length; i++) {
+        //   if(resMan[i].manager === answer.manager)
+        //     manId = resMan[i].manager_id;
+        // }
+        let roleId = 1
+        // for (let i = 0; i < roles.length; i++) {
+        //   if(resRoles[i].role === answer.role)
+        //     roleId = resRoles[i].id;
+        // }
+
+        //create querry
+console.log(answer);
+        connection.query("INSERT INTO employeeTbl SET ?",
+        {first_name: answer.fName,
+          last_name: answer.lName,
+          role_id: roleId,
+          manager_id: manId
+        },function(err){
+          if(err) throw err;
+          console.log("Employee Entered Successfully");
+
+          start();
+        })
+
+      })
+
+
+    })
+  })
 }
 
 function removeEmp(){

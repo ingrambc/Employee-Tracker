@@ -432,6 +432,17 @@ function addRole(){
 }//end of function
 
 function addDepartment(){
-  console.log("Entered addDepartment");
-  start();
+  //get new depatment name
+  inquirer.prompt({
+    name: "name",
+    type: "input",
+    message: "What is the new Departments name",
+  }).then(function(answer){
+    //querry to add department to table
+    connection.query("INSERT INTO departmentTbl (name) VALUES (?)", [answer.name], function(err, res){
+      if(err) throw err;
+      console.log("The department "+answer.name+" was added");
+      start();
+    })
+  })
 }

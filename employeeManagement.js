@@ -452,7 +452,7 @@ function addDepartment(){
       start();
     })
   })
-}
+}//end of add Deptartment
 
 function removeRole(){
   //get list of roles
@@ -465,9 +465,6 @@ function removeRole(){
     for (let i = 0; i < rolesRes.length; i++) {
       roles.push(rolesRes[i].role);      
     }
-
-    console.log(rolesRes);
-
     //get which role to delete
     inquirer.prompt({
       name: "role",
@@ -481,26 +478,49 @@ function removeRole(){
         if(answer.role === rolesRes[i].role)
           roleId = rolesRes[i].id;        
       }
-      console.log('role id = '+roleId);
 
       //try and delete the role
       connection.query("DELETE FROM roleTbl WHERE id = ?", [roleId],
       function(err, res){
         console.log(res);
-        if(res.affectedRows === 0){
-          console.log("You must remove all employees from role before removing role");
+        if(err){
+          console.log("You must remove all employees from this role before removing");
         }else{
           console.log("The role was succesfully removed")
         }
-
         start();
       })
-      
     })
   })
-}
+}//end of removeRole
 
 function removeDepartment(){
-  console.log("remove department, not working yet");
-  start();
-}
+  //get department list
+  connection.query("SELECT name FROM departmentTbl", function(err, res){
+    if(err) throw err;
+    //turn response into list
+    let departments = [];
+    for (let i = 0; i < res.length; i++) {
+      departments.push(res[i].name);      
+    }
+
+    //get which department to delete
+    inquirer.prompt({
+      name: "department",
+      type: "list",
+      message: "Select which department to remove",
+      choices: departments
+    }).then(function(answer){
+      //try and delete the role
+      connection.query("DELETE FROM departmentTbl WHERE name = ?", [answer.department],
+      function(err, res){
+        if(err){
+          console.log("You must remove all roles from department before removing");
+        }else{
+          console.log("The department was succesfully removed")
+        }
+        start();
+      })
+    })
+  })
+}//end of remove depart

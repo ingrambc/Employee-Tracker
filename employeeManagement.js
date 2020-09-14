@@ -68,7 +68,7 @@ function start(){
         break;
     }
   })
-}
+}//end of function
 
 function viewAllEmps(){
   // Build querry statement
@@ -166,7 +166,7 @@ function viewByMan(){
       })
     })
   })
-}
+}//end of function
 
 function addEmp(){
   //get list for prompts
@@ -239,7 +239,7 @@ function addEmp(){
       })
     })
   })
-}
+}//end of add Emp() function
 
 function removeEmp(){
   //create query staement to get employee list
@@ -274,7 +274,7 @@ function removeEmp(){
       })
     })
   })
-}
+}//end of removeEmp() function
 
 function updateRole(){
   //create query statement to get employee list
@@ -332,16 +332,58 @@ function updateRole(){
         })
       })
     })
-
-
   })
-}
-
+}//end of updateRole() function
 
 function updateMan(){
-  console.log("Entered updateMan");
-  start();
-}
+  //create query statement to get employee list
+  let querry = "SELECT id, concat(first_name, ' ', last_name) AS employee ";
+      querry += "FROM employeeTbl";
+  connection.query(querry, function(err, employeesRes){
+    //create employee list from response
+    let employees = [];
+    for (let i = 0; i < employeesRes.length; i++) {
+    employees.push(employeesRes[i].employee);      
+    }
+
+    //prompt for input
+    inquirer.prompt([{
+      name: "employee",
+      type: "list",
+      message: "Which employee would like to update manager?",
+      choices: employees,
+    },{
+      name: "manager",
+      type: "list",
+      message: "Who is their new manager?",
+      choices: employees,
+    }]).then(function(answer){
+      //get employee id 
+      let empId = -1;
+      for (let i = 0; i < employeesRes.length; i++) {
+        if(answer.employee === employeesRes[i].employee){
+          empId = employeesRes[i].id;
+        }
+      }
+
+      //get manager id
+      let managerId = -1;
+      for (let i = 0; i < employeesRes.length; i++) {
+        if(answer.manager === employeesRes[i].employee){
+          managerId = employeesRes[i].id;
+        }
+      }
+
+      //querry for update of manager
+      connection.query("UPDATE employeeTbl SET manager_id = ? WHERE id = ?",
+      [managerId, empId], function(err, res){
+          if(err) throw err;
+          console.log("Employee " +answer.employee+ "\'s manager has been update");
+          start();
+       })
+     })
+  })
+}//end of updateMan() function
 
 function addRole(){
   console.log("Entered addRole");

@@ -386,9 +386,50 @@ function updateMan(){
 }//end of updateMan() function
 
 function addRole(){
-  console.log("Entered addRole");
-  start();
-}
+//get department list
+  connection.query("SELECT DISTINCT name, id FROM departmentTbl", function(err, res){
+    if(err) throw err;
+    //turn response into list
+    let departments = [];
+    for (let i = 0; i < res.length; i++) {
+      departments.push(res[i].name);      
+    }
+
+    inquirer.prompt([{
+      name: "title",
+      type: "input",
+      message: "What is the new role\'s title?",
+    },{
+      name: "salary",
+      type: "input",
+      message: "What is the new role\'s salary?",
+    },{
+      name: "department",
+      type: "list",
+      message: "What is the new role\'s department?",
+      choices: departments,
+    }]).then(function(answer){
+      //get department id
+      departmentId = -1;
+      for (let i = 0; i < res.length; i++) {
+        if (answer.department === res[i].name){
+          departmentId = res[i].id;
+        }
+      }
+      //query to add role
+      connection.query("INSERT INTO roleTbl SET ?",
+        { title: answer.title,
+          salary: answer.salary,
+          department_id: departmentId,
+        },function(err){
+          if(err) throw err;
+          console.log("Role Entered Successfully");
+
+          start();
+      })
+    })
+  })
+}//end of function
 
 function addDepartment(){
   console.log("Entered addDepartment");

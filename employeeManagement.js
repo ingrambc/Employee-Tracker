@@ -277,9 +277,66 @@ function removeEmp(){
 }
 
 function updateRole(){
-  console.log("Entered updateRole");
-  start();
+  //create query statement to get employee list
+  let querry = "SELECT id, concat(first_name, ' ', last_name) AS employee ";
+      querry += "FROM employeeTbl";
+  connection.query(querry, function(err, employeesRes){
+    //create employee list from response
+    let employees = [];
+    for (let i = 0; i < employeesRes.length; i++) {
+      employees.push(employeesRes[i].employee);      
+    }
+
+    //create query to get roles list
+    connection.query("SELECT id, title FROM roleTbl", function(err, rolesRes){
+      //create role list
+      let roles = [];
+      for (let i = 0; i < rolesRes.length; i++) {
+        roles.push(rolesRes[i].title);        
+      }
+      
+      //prompt for input
+      inquirer.prompt([{
+        name: "employee",
+        type: "list",
+        message: "Which employee would like to update?",
+        choices: employees,
+      },{
+        name: "role",
+        type: "list",
+        message: "What is the new role?",
+        choices: roles,
+      }]).then(function(answer){
+        //get employee id 
+        let empId = -1;
+        for (let i = 0; i < employeesRes.length; i++) {
+          if(answer.employee === employeesRes[i].employee){
+            empId = employeesRes[i].id;
+          }
+        }
+
+        //get role id
+        let roleId = -1;
+        for (let i = 0; i < rolesRes.length; i++) {
+          if(answer.role === rolesRes[i].title){
+            roleId = rolesRes[i].id;
+          }
+        }
+
+        //querry for deletion
+        connection.query("UPDATE employeeTbl SET role_id = ? WHERE id = ?",
+        [roleId, empId], function(err, res){
+            if(err) throw err;
+            console.log("Employee " +answer.employee+ "\'s role has been update");
+            start();
+        })
+      })
+    })
+
+
+  })
 }
+
 
 function updateMan(){
   console.log("Entered updateMan");

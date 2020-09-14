@@ -20,7 +20,8 @@ connection.connect(function(err) {
 
 //lists
 const tasks = ["View All Employees", "View All Employees by Department", "View All Employees by Manager",
-  "Add Employees", "Remove Employee", "Update Employee Role", "Update Employee Manager","add Role", "add Department", "Exit"];
+  "Add Employees", "Remove Employee", "Update Employee Role", "Update Employee Manager","Add Role", "Add Department",
+  "Remove Department", "Remove Role", "Exit"];
 
 function start(){
   //get input from user
@@ -53,11 +54,17 @@ function start(){
       case ("Update Employee Manager"):
         updateMan();
         break;
-      case ("add Role"):
+      case ("Add Role"):
         addRole();
         break;
-      case ("add Department"):
+      case ("Add Department"):
         addDepartment();
+        break;
+      case ("Remove Role"):
+        removeRole();
+        break;
+      case ("Remove Department"):
+        removeDepartment();
         break;
       case ("Exit"):
         connection.end();
@@ -445,4 +452,55 @@ function addDepartment(){
       start();
     })
   })
+}
+
+function removeRole(){
+  //get list of roles
+  let query ="SELECT a.id, concat(a.title, ' ', b.name) AS role ";
+      query +="FROM roleTbl a LEFT JOIN departmentTbl b ";
+      query +="ON a.department_id = b.id";
+  connection.query(query, function(err, rolesRes){
+    if(err) throw err;
+    let roles = []
+    for (let i = 0; i < rolesRes.length; i++) {
+      roles.push(rolesRes[i].role);      
+    }
+
+    console.log(rolesRes);
+
+    //get which role to delete
+    inquirer.prompt({
+      name: "role",
+      type: "list",
+      message: "Select which role to remove",
+      choices: roles
+    }).then(function(answer){
+      //get role id
+      roleId = -1
+      for (let i = 0; i < rolesRes.length; i++) {
+        if(answer.role === rolesRes[i].role)
+          roleId = rolesRes[i].id;        
+      }
+      console.log('role id = '+roleId);
+
+      //try and delete the role
+      connection.query("DELETE FROM roleTbl WHERE id = ?", [roleId],
+      function(err, res){
+        console.log(res);
+        if(res.affectedRows === 0){
+          console.log("You must remove all employees from role before removing role");
+        }else{
+          console.log("The role was succesfully removed")
+        }
+
+        start();
+      })
+      
+    })
+  })
+}
+
+function removeDepartment(){
+  console.log("remove department, not working yet");
+  start();
 }

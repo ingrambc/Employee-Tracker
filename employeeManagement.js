@@ -20,7 +20,7 @@ connection.connect(function(err) {
 
 //lists
 const tasks = ["View All Employees", "View All Employees by Department", "View All Employees by Manager",
-  "Add Employees", "Remove Employees", "Update Employee Role", "Update Employee Manager","add Role", "add Department", "Exit"];
+  "Add Employees", "Remove Employee", "Update Employee Role", "Update Employee Manager","add Role", "add Department", "Exit"];
 
 function start(){
   //get input from user
@@ -44,7 +44,7 @@ function start(){
       case ("Add Employees"):
         addEmp();
         break;
-      case ("Remove Employees"):
+      case ("Remove Employee"):
         removeEmp();
         break;
       case ("Update Employee Role"):
@@ -170,10 +170,10 @@ function viewByMan(){
 
 function addEmp(){
   //get list for prompts
-  connection.query("SELECT DISTINCT title, id FROM roleTbl", function(err, resRoles){
+  connection.query("SELECT DISTINCT title, id FROM roleTbl", function(err, rolesRes){
     let roles = []
-    for (let i = 0; i < resRoles.length; i++) {
-      roles.push(resRoles[i].title);      
+    for (let i = 0; i < rolesRes.length; i++) {
+      roles.push(rolesRes[i].title);      
     }
 
     let querry = "SELECT DISTINCT a.manager_id, concat(b.first_name, ' ', b.last_name) AS manager ";
@@ -181,12 +181,12 @@ function addEmp(){
     querry += "LEFT JOIN employeetbl b ON a.manager_id = b.id ";
     querry += "WHERE a.manager_id IS NOT NULL ";
 
-    connection.query(querry, function(err, resMan){
+    connection.query(querry, function(err, managerRes){
       if(err) throw err;
       //turn response into list
       let managers = ["none"];
-      for (let i = 0; i < resMan.length; i++) {
-        managers.push(resMan[i].manager);
+      for (let i = 0; i < managerRes.length; i++) {
+        managers.push(managerRes[i].manager);
       }
 
       inquirer
@@ -210,41 +210,70 @@ function addEmp(){
           choices: managers
       }]).then (function(answer){
         //get ID values
-        let manId = 1;
-        // for (let i = 0; i < managers.length; i++) {
-        //   if(resMan[i].manager === answer.manager)
-        //     manId = resMan[i].manager_id;
-        // }
-        let roleId = 1
-        // for (let i = 0; i < roles.length; i++) {
-        //   if(resRoles[i].role === answer.role)
-        //     roleId = resRoles[i].id;
-        // }
+        let roleId = -1
+        for(let i = 0; i < rolesRes.length; i++){
+          if(answer.role === rolesRes[i].title){
+            roleId = rolesRes[i].id;
+          }
+        }
+
+        let managerId = null;
+        for(let i = 0; i < managerRes.length; i++){
+          if(answer.manager === managerRes[i].manager){
+            managerId = managerRes[i].manager_id;
+          }
+        }
 
         //create querry
-console.log(answer);
         connection.query("INSERT INTO employeeTbl SET ?",
         {first_name: answer.fName,
           last_name: answer.lName,
           role_id: roleId,
-          manager_id: manId
+          manager_id: managerId
         },function(err){
           if(err) throw err;
           console.log("Employee Entered Successfully");
 
           start();
         })
-
       })
-
-
     })
   })
 }
 
 function removeEmp(){
-  console.log("Entered removeEmp");
-  start();
+  //create query staement to get employee list
+  let querry = "SELECT id, concat(first_name, ' ', last_name) AS employee ";
+      querry += "FROM employeeTbl";
+  connection.query(querry, function(err, employeesRes){
+    //create employee list from response
+    employees = [];
+    for (let i = 0; i < employeesRes.length; i++) {
+      employees.push(employeesRes[i].employee);      
+    }
+
+    inquirer.prompt({
+      name: "employee",
+      type: "list",
+      message: "Which employee would you like to remove?",
+      choices: employees
+    }).then(function(answer){
+      //get employee id 
+      let empId = -1;
+      for (let i = 0; i < employeesRes.length; i++) {
+        if(answer.employee === employeesRes[i].employee){
+          empId = employeesRes[i].id;
+        }
+      }
+      //querry for deletion
+      connection.query("DELETE FROM employeeTbl WHERE id = ?",[empId], 
+        function(err, res){
+          if(err) throw err;
+          console.log("Employee " +answer.employee+ " Deleted");
+          start();
+      })
+    })
+  })
 }
 
 function updateRole(){
